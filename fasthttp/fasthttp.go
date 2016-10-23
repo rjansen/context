@@ -9,6 +9,19 @@ import (
 	"time"
 )
 
+//HTTPHanderFunc is a function to handle fasthttp requrests
+type HTTPHanderFunc func(*fasthttp.RequestCtx)
+
+//HandleRequest is the contract with HTTPHandler interface
+func (h HTTPHanderFunc) HandleRequest(ctx *fasthttp.RequestCtx) {
+	h(ctx)
+}
+
+//HTTPHandler is a contract for fast http handlers
+type HTTPHandler interface {
+	HandleRequest(*fasthttp.RequestCtx)
+}
+
 //ResponseWriter is a wrapper function to store status and body length of the request
 type ResponseWriter interface {
 	http.ResponseWriter
@@ -75,37 +88,37 @@ func (w *responseWriter) Flush() {
 
 type ErrorHandler func(container context.Context, ctx *fasthttp.RequestCtx) error
 
-func (h ErrorHandler) HandleRequest(ctx *fasthttp.RequestCtx) {
-	if err := h(ctx); err != nil {
+func (h ErrorHandler) HandleRequest(container context.Context, ctx *fasthttp.RequestCtx) {
+	if err := h(container, ctx); err != nil {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 	}
 }
 
 type LogHandler func(container context.Context, ctx *fasthttp.RequestCtx) error
 
-func (h LogHandler) HandleRequest(ctx *fasthttp.RequestCtx) {
+func (h LogHandler) HandleRequest(container context.Context, ctx *fasthttp.RequestCtx) {
 	start := time.Now()
 	logger.Info("contex.Request",
 		logger.Bytes("method", ctx.Method()),
 		logger.Bytes("path", ctx.Path()),
 	)
 	logger.Debug("context.Context",
-		logger.String("ctx", context.String()),
+		logger.Bool("ctxIsNil", ctx == nil),
+		logger.Bool("containerIsNil", container == nil),
 	)
-	if err := h(ctx); err != nil {
+	if err := h(container, ctx); err != nil {
 		logger.Error("contex.LogHandler.Error",
 			logger.Bytes("method", ctx.Method()),
 			logger.Bytes("path", ctx.Path()),
 			logger.Err(err),
 		)
 	}
-	response := w.(ResponseWriter)
 	logger.Info("context.Response",
 		logger.Bytes("method", ctx.Method()),
 		logger.Bytes("path", ctx.Path()),
 		logger.String("status", http.StatusText(ctx.Response.StatusCode())),
 		logger.Int("size", ctx.Response.Header.ContentLength()),
-		logger.Time("requestTime", time.Since(start)),
+		logger.Duration("requestTime", time.Since(start)),
 	)
 }
 
@@ -114,6 +127,7 @@ func JSON(ctx *fasthttp.RequestCtx, status int, result media.JSON) error {
 	if err != nil {
 		return err
 	}
+	ctx.SetBody(jsonBytes)
 	ctx.SetContentType("application/json")
 	ctx.SetStatusCode(status)
 	return nil

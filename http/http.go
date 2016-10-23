@@ -2,12 +2,10 @@ package http
 
 import (
 	"context"
-	"flag"
-	"fmt"
+	"farm.e-pedion.com/repo/context/media"
+	"farm.e-pedion.com/repo/logger"
 	"net/http"
 	"time"
-    "farm.e-pedion.com/repo/context/media"
-	"farm.e-pedion.com/repo/logger"
 )
 
 //ResponseWriter is a wrapper function to store status and body length of the request
@@ -68,53 +66,54 @@ func (w *responseWriter) Flush() {
 	if ok {
 		if !w.Written() {
 			// The status will be 200 if WriteHeader has not been called yet
-			rw.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusOK)
 		}
 		flusher.Flush()
 	}
 }
 
-type ErrorHandler func(http.ResponseWriter, *http.Request) error
+type ErrorHandler func(context.Context, http.ResponseWriter, *http.Request) error
 
-func (h ErrorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := h(w, r); err != nil {
+func (h ErrorHandler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
+	if err := h(c, w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-type LogHandler func(http.ResponseWriter, *http.Request) error
+type LogHandler func(context.Context, http.ResponseWriter, *http.Request) error
 
-func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h LogHandler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-    rw := newResponseWriter(w)
 	logger.Info("contex.Request",
 		logger.String("method", r.Method),
 		logger.String("path", r.URL.Path),
 	)
-    logger.Debug("context.Context", 
-        logger.String("ctx", context.String()),
-    )
-	if err := h(w, r); err != nil {
+	logger.Debug("context.Context",
+		logger.Bool("ctxIsNil", r.Context() == nil),
+		logger.Bool("containerIsNil", c == nil),
+	)
+	rw := NewResponseWriter(w)
+	if err := h(c, rw, r); err != nil {
 		logger.Error("contex.LogHandler.Error",
 			logger.String("method", r.Method),
 			logger.String("path", r.URL.Path),
 			logger.Err(err),
 		)
 	}
-	response := w.(ResponseWriter)
+	response := rw.(ResponseWriter)
 	logger.Info("context.Response",
-		logger.String("method", w.r.Method),
+		logger.String("method", r.Method),
 		logger.String("path", r.URL.Path),
-        logger.String("status", http.StatusText(response.Status())), 
-        logger.Int("size", response.Sixe()), 
-        logger.Time("requestTime", time.Since(start),
-    )
+		logger.String("status", http.StatusText(response.Status())),
+		logger.Int("size", response.Size()),
+		logger.Duration("requestTime", time.Since(start)),
+	)
 }
 
 func JSON(w http.ResponseWriter, status int, result media.JSON) error {
-    if err := result.Marshal(w); err != nil {
-        return err
-    }
+	if err := result.Marshal(w); err != nil {
+		return err
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return nil
@@ -127,7 +126,7 @@ func Status(w http.ResponseWriter, status int) error {
 
 func Err(w http.ResponseWriter, err error) error {
 	//w.WriteHeader(http.StatusInternalServerError)
-    http.Error(w, err.Error(), http.StatusInternalServerError)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
 	return err
 }
 
