@@ -36,12 +36,12 @@ func errorHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.Reques
 }
 
 //ErrorHandler is a helper type to add exception control to other handlers
-// type ErrorHandler func(context.Context, *fasthttp.RequestCtx) error
+type ErrorHandler func(context.Context, *fasthttp.RequestCtx) error
 
 //HandleRequest is the HTTPHandler contract
-// func (h ErrorHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
-// 	return errorHandle(HTTPHandlerFunc(h), c, fc)
-// }
+func (h ErrorHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
+	return errorHandle(HTTPHandlerFunc(h), c, fc)
+}
 
 //Error wraps the provided HTTPHandlerFunc with exception control
 func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
@@ -79,12 +79,12 @@ func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestC
 }
 
 //LogHandler is a helper type to add access logging control to other handlers
-// type LogHandler func(context.Context, *fasthttp.RequestCtx) error
+type LogHandler func(context.Context, *fasthttp.RequestCtx) error
 
 //HandleRequest is the HTTPHandler contract
-// func (h LogHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
-// 	return logHandle(HTTPHandlerFunc(h), c, fc)
-// }
+func (h LogHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
+	return logHandle(HTTPHandlerFunc(h), c, fc)
+}
 
 //Log wraps the provided HTTPHandlerFunc with access logging control
 func Log(handler HTTPHandlerFunc) HTTPHandlerFunc {
