@@ -9,119 +9,91 @@ import (
 	"time"
 )
 
-//HTTPHanderFunc is a function to handle fasthttp requrests
-type HTTPHanderFunc func(*fasthttp.RequestCtx)
+//SimpleHTTPHandler is a contract for fast http handlers
+type SimpleHTTPHandler interface {
+	HandleRequest(*fasthttp.RequestCtx)
+}
+
+//HTTPHandlerFunc is a function to handle fasthttp requrests
+type HTTPHandlerFunc func(context.Context, *fasthttp.RequestCtx) error
 
 //HandleRequest is the contract with HTTPHandler interface
-func (h HTTPHanderFunc) HandleRequest(ctx *fasthttp.RequestCtx) {
-	h(ctx)
+func (h HTTPHandlerFunc) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
+	return h(c, fc)
 }
 
 //HTTPHandler is a contract for fast http handlers
 type HTTPHandler interface {
-	HandleRequest(*fasthttp.RequestCtx)
+	HandleRequest(context.Context, *fasthttp.RequestCtx) error
 }
 
-//ResponseWriter is a wrapper function to store status and body length of the request
-type ResponseWriter interface {
-	http.ResponseWriter
-	http.Flusher
-	// Status returns the status code of the response or 200 if the response has
-	// not been written (as this is the default response code in net/http)
-	Status() int
-	// Written returns whether or not the ResponseWriter has been written.
-	Written() bool
-	// Size returns the size of the response body.
-	Size() int
+func errorHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestCtx) error {
+	if err := handler(c, fc); err != nil {
+		fc.Error(err.Error(), fasthttp.StatusInternalServerError)
+		return err
+	}
+	return nil
 }
 
-// NewResponseWriter creates a ResponseWriter that wraps an http.ResponseWriter
-func NewResponseWriter(w http.ResponseWriter) ResponseWriter {
-	return &responseWriter{
-		ResponseWriter: w,
+//ErrorHandler is a helper type to add exception control to other handlers
+type ErrorHandler func(context.Context, *fasthttp.RequestCtx) error
+
+//HandleRequest is the HTTPHandler contract
+func (h ErrorHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
+	return errorHandle(HTTPHandlerFunc(h), c, fc)
+}
+
+//Error wraps the provided HTTPHandlerFunc with exception control
+func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
+	return func(c context.Context, fc *fasthttp.RequestCtx) error {
+		return errorHandle(handler, c, fc)
 	}
 }
 
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-	size   int
-}
-
-func (w *responseWriter) WriteHeader(s int) {
-	w.status = s
-	w.ResponseWriter.WriteHeader(s)
-}
-
-func (w *responseWriter) Write(b []byte) (int, error) {
-	if !w.Written() {
-		// The status will be 200 if WriteHeader has not been called yet
-		w.WriteHeader(http.StatusOK)
-	}
-	size, err := w.ResponseWriter.Write(b)
-	w.size += size
-	return size, err
-}
-
-func (w *responseWriter) Status() int {
-	return w.status
-}
-
-func (w *responseWriter) Size() int {
-	return w.size
-}
-
-func (w *responseWriter) Written() bool {
-	return w.status != 0
-}
-
-func (w *responseWriter) Flush() {
-	flusher, ok := w.ResponseWriter.(http.Flusher)
-	if ok {
-		if !w.Written() {
-			// The status will be 200 if WriteHeader has not been called yet
-			w.WriteHeader(http.StatusOK)
-		}
-		flusher.Flush()
-	}
-}
-
-type ErrorHandler func(container context.Context, ctx *fasthttp.RequestCtx) error
-
-func (h ErrorHandler) HandleRequest(container context.Context, ctx *fasthttp.RequestCtx) {
-	if err := h(container, ctx); err != nil {
-		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
-	}
-}
-
-type LogHandler func(container context.Context, ctx *fasthttp.RequestCtx) error
-
-func (h LogHandler) HandleRequest(container context.Context, ctx *fasthttp.RequestCtx) {
+func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestCtx) error {
 	start := time.Now()
 	logger.Info("contex.Request",
-		logger.Bytes("method", ctx.Method()),
-		logger.Bytes("path", ctx.Path()),
+		logger.Bytes("method", fc.Method()),
+		logger.Bytes("path", fc.Path()),
 	)
 	logger.Debug("context.Context",
-		logger.Bool("ctxIsNil", ctx == nil),
-		logger.Bool("containerIsNil", container == nil),
+		logger.Bool("ctxIsNil", fc == nil),
+		logger.Bool("containerIsNil", c == nil),
 	)
-	if err := h(container, ctx); err != nil {
+	var err error
+	if err = handler(c, fc); err != nil {
 		logger.Error("contex.LogHandler.Error",
-			logger.Bytes("method", ctx.Method()),
-			logger.Bytes("path", ctx.Path()),
+			logger.Bytes("method", fc.Method()),
+			logger.Bytes("path", fc.Path()),
 			logger.Err(err),
 		)
 	}
 	logger.Info("context.Response",
-		logger.Bytes("method", ctx.Method()),
-		logger.Bytes("path", ctx.Path()),
-		logger.String("status", http.StatusText(ctx.Response.StatusCode())),
-		logger.Int("size", ctx.Response.Header.ContentLength()),
+		logger.Bytes("method", fc.Method()),
+		logger.Bytes("path", fc.Path()),
+		logger.String("status", http.StatusText(fc.Response.StatusCode())),
+		logger.Int("size", fc.Response.Header.ContentLength()),
 		logger.Duration("requestTime", time.Since(start)),
 	)
+	return err
 }
 
+//LogHandler is a helper type to add access logging control to other handlers
+type LogHandler func(context.Context, *fasthttp.RequestCtx) error
+
+//HandleRequest is the HTTPHandler contract
+func (h LogHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) error {
+	return logHandle(HTTPHandlerFunc(h), c, fc)
+}
+
+//Log wraps the provided HTTPHandlerFunc with access logging control
+func Log(handler HTTPHandlerFunc) LogHandler {
+	return func(c context.Context, fc *fasthttp.RequestCtx) error {
+		return logHandle(handler, c, fc)
+	}
+}
+
+//JSON writes the provided json media to the response
 func JSON(ctx *fasthttp.RequestCtx, status int, result media.JSON) error {
 	jsonBytes, err := result.ToBytes()
 	if err != nil {
@@ -133,28 +105,34 @@ func JSON(ctx *fasthttp.RequestCtx, status int, result media.JSON) error {
 	return nil
 }
 
+//Status writes the provided status to the response
 func Status(ctx *fasthttp.RequestCtx, status int) error {
 	ctx.SetStatusCode(status)
 	return nil
 }
 
+//Err writes the provided  error to the response
 func Err(ctx *fasthttp.RequestCtx, err error) error {
 	//w.WriteHeader(http.StatusInternalServerError)
 	ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 	return err
 }
 
+//Handler is a struct to add response helper function to other handlers
 type Handler struct {
 }
 
+//JSON writes a json media to response
 func (h Handler) JSON(ctx *fasthttp.RequestCtx, status int, result media.JSON) error {
 	return JSON(ctx, status, result)
 }
 
+//Status writes the provided status to response
 func (h Handler) Status(ctx *fasthttp.RequestCtx, status int) error {
 	return Status(ctx, status)
 }
 
+//Err writes a error to response
 func (h Handler) Err(ctx *fasthttp.RequestCtx, err error) error {
 	return Err(ctx, err)
 }
