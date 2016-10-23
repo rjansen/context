@@ -61,7 +61,7 @@ func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestC
 		logger.Bool("containerIsNil", c == nil),
 	)
 	var err error
-	if err = errorHandle(handler, c, fc); err != nil {
+	if err = handler(c, fc); err != nil {
 		logger.Error("contex.LogHandler.Error",
 			logger.Bytes("method", fc.Method()),
 			logger.Bytes("path", fc.Path()),
