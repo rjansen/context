@@ -73,17 +73,17 @@ func (w *responseWriter) Flush() {
 	}
 }
 
-type ErrorHandler func(ctx *fasthttp.RequestCtx) error
+type ErrorHandler func(container context.Context, ctx *fasthttp.RequestCtx) error
 
-func (h ErrorHandler) Handle(ctx *fasthttp.RequestCtx) {
+func (h ErrorHandler) HandleRequest(ctx *fasthttp.RequestCtx) {
 	if err := h(ctx); err != nil {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 	}
 }
 
-type LogHandler func(ctx *fasthttp.RequestCtx) error
+type LogHandler func(container context.Context, ctx *fasthttp.RequestCtx) error
 
-func (h LogHandler) Handle(ctx *fasthttp.RequestCtx) {
+func (h LogHandler) HandleRequest(ctx *fasthttp.RequestCtx) {
 	start := time.Now()
 	logger.Info("contex.Request",
 		logger.Bytes("method", ctx.Method()),
