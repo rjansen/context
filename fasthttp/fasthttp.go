@@ -87,7 +87,7 @@ func (h LogHandler) HandleRequest(c context.Context, fc *fasthttp.RequestCtx) er
 }
 
 //Log wraps the provided HTTPHandlerFunc with access logging control
-func Log(handler HTTPHandlerFunc) LogHandler {
+func Log(handler HTTPHandlerFunc) HTTPHandlerFunc {
 	return func(c context.Context, fc *fasthttp.RequestCtx) error {
 		return logHandle(handler, c, fc)
 	}
