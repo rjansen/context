@@ -1,4 +1,4 @@
-logger*coverage*
+context*coverage*
 vendor/*/
 *.pprof
 *.test

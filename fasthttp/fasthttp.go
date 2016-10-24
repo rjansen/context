@@ -53,6 +53,8 @@ func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
 func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestCtx) error {
 	start := time.Now()
 	logger.Info("contex.Request",
+		logger.Int64("tid", int64(fc.ConnID())),
+		logger.Int64("rid", int64(fc.ConnRequestNum())),
 		logger.Bytes("method", fc.Method()),
 		logger.Bytes("path", fc.Path()),
 	)
@@ -63,12 +65,16 @@ func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestC
 	var err error
 	if err = handler(c, fc); err != nil {
 		logger.Error("contex.LogHandler.Error",
+			logger.Int64("tid", int64(fc.ConnID())),
+			logger.Int64("rid", int64(fc.ConnRequestNum())),
 			logger.Bytes("method", fc.Method()),
 			logger.Bytes("path", fc.Path()),
 			logger.Err(err),
 		)
 	}
 	logger.Info("context.Response",
+		logger.Int64("tid", int64(fc.ConnID())),
+		logger.Int64("rid", int64(fc.ConnRequestNum())),
 		logger.Bytes("method", fc.Method()),
 		logger.Bytes("path", fc.Path()),
 		logger.String("status", http.StatusText(fc.Response.StatusCode())),
@@ -94,8 +100,8 @@ func Log(handler HTTPHandlerFunc) HTTPHandlerFunc {
 }
 
 //JSON writes the provided json media to the response
-func JSON(ctx *fasthttp.RequestCtx, status int, result media.JSON) error {
-	jsonBytes, err := result.ToBytes()
+func JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
+	jsonBytes, err := media.ToJSONBytes(result)
 	if err != nil {
 		return err
 	}
