@@ -23,6 +23,7 @@ install: install_sw_deps sync_deps
 .PHONY: install_sw_deps
 install_sw_deps:
 	brew install go
+	go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
 	go get -u github.com/golang/protobuf/protoc-gen-go
 	go get -u github.com/kardianos/govendor
 
@@ -41,6 +42,8 @@ all: build test bench_all coverage
 
 .PHONY: build
 build:
+	@echo "Protocol Buffer Generating Proto@$(VERSION)-$(BUILD)"
+	protoc --go_out=./ ./media/proto/*.proto
 	@echo "Building $(REPO)@$(VERSION)-$(BUILD)"
 	go build $(PKGS)
 

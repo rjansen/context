@@ -1,26 +1,27 @@
 syntax = "proto3";
 package proto;
 
-message Person {
-  string name = 1;
-  int32 id = 2;  // Unique ID number for this person.
-  string email = 3;
+message Store {
+  int32 id = 1;
+  string name = 2;
 
-  enum PhoneType {
+  enum DataType {
     MOBILE = 0;
     HOME = 1;
     WORK = 2;
   }
 
-  message PhoneNumber {
-    string number = 1;
-    PhoneType type = 2;
+  message Data {
+    int32 id = 1;
+    string name = 2;
+    string email = 3;
+    string number = 4;
+    DataType type = 5;
   }
 
-  repeated PhoneNumber phones = 4;
+  repeated Data data = 3;
 }
 
-// Our address book file is just one of these.
-message AddressBook {
-  repeated Person people = 1;
+message StoreStream {
+  repeated Store stores = 1;
 }
