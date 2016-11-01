@@ -23,6 +23,7 @@ install: install_sw_deps sync_deps
 .PHONY: install_sw_deps
 install_sw_deps:
 	brew install go
+	go get -u github.com/golang/protobuf/protoc-gen-go
 	go get -u github.com/kardianos/govendor
 
 .PHONY: install_deps

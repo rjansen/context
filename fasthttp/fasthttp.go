@@ -2,7 +2,8 @@ package fasthttp
 
 import (
 	"context"
-	"farm.e-pedion.com/repo/context/media"
+	"farm.e-pedion.com/repo/context/media/json"
+	"farm.e-pedion.com/repo/context/media/proto"
 	"farm.e-pedion.com/repo/logger"
 	"github.com/valyala/fasthttp"
 	"net/http"
@@ -62,6 +63,7 @@ func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestC
 		logger.Bool("ctxIsNil", fc == nil),
 		logger.Bool("containerIsNil", c == nil),
 	)
+	c = context.WithValue(c, "log", logger.Get())
 	var err error
 	if err = handler(c, fc); err != nil {
 		logger.Error("contex.LogHandler.Error",
@@ -101,12 +103,23 @@ func Log(handler HTTPHandlerFunc) HTTPHandlerFunc {
 
 //JSON writes the provided json media to the response
 func JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
-	jsonBytes, err := media.ToJSONBytes(result)
+	jsonBytes, err := json.MarshalBytes(result)
 	if err != nil {
 		return err
 	}
 	ctx.SetBody(jsonBytes)
 	ctx.SetContentType("application/json")
+	ctx.SetStatusCode(status)
+	return nil
+}
+
+func ProtoBuf(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
+	protoBytes, err := proto.MarshalBytes(result)
+	if err != nil {
+		return err
+	}
+	ctx.SetBody(protoBytes)
+	ctx.SetContentType("application/octet-stream")
 	ctx.SetStatusCode(status)
 	return nil
 }
@@ -129,7 +142,7 @@ type Handler struct {
 }
 
 //JSON writes a json media to response
-func (h Handler) JSON(ctx *fasthttp.RequestCtx, status int, result media.JSON) error {
+func (h Handler) JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	return JSON(ctx, status, result)
 }
 

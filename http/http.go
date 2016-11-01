@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"farm.e-pedion.com/repo/context/media"
+	"farm.e-pedion.com/repo/context/media/json"
 	"farm.e-pedion.com/repo/logger"
 	"net/http"
 	"time"
@@ -72,17 +72,17 @@ func (w *responseWriter) Flush() {
 	}
 }
 
-type ErrorHandler func(context.Context, http.ResponseWriter, *http.Request) error
+type ErrorHandler func(http.ResponseWriter, *http.Request) error
 
-func (h ErrorHandler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
-	if err := h(c, w, r); err != nil {
+func (h ErrorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if err := h(w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-type LogHandler func(context.Context, http.ResponseWriter, *http.Request) error
+type LogHandler func(http.ResponseWriter, *http.Request) error
 
-func (h LogHandler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
+func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	logger.Info("contex.Request",
 		logger.String("method", r.Method),
@@ -90,10 +90,10 @@ func (h LogHandler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.
 	)
 	logger.Debug("context.Context",
 		logger.Bool("ctxIsNil", r.Context() == nil),
-		logger.Bool("containerIsNil", c == nil),
 	)
+	r = r.WithContext(context.WithValue(r.Context(), "log", logger.Get()))
 	rw := NewResponseWriter(w)
-	if err := h(c, rw, r); err != nil {
+	if err := h(rw, r); err != nil {
 		logger.Error("contex.LogHandler.Error",
 			logger.String("method", r.Method),
 			logger.String("path", r.URL.Path),
@@ -110,8 +110,8 @@ func (h LogHandler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.
 	)
 }
 
-func JSON(w http.ResponseWriter, status int, result media.JSON) error {
-	if err := result.Marshal(w); err != nil {
+func JSON(w http.ResponseWriter, status int, result interface{}) error {
+	if err := json.Marshal(w, result); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -133,7 +133,7 @@ func Err(w http.ResponseWriter, err error) error {
 type Handler struct {
 }
 
-func (h Handler) JSON(w http.ResponseWriter, status int, result media.JSON) error {
+func (h Handler) JSON(w http.ResponseWriter, status int, result json.Media) error {
 	return JSON(w, status, result)
 }
 

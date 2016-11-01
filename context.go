@@ -4,8 +4,8 @@ import (
 	"farm.e-pedion.com/repo/logger"
 )
 
-//SetupSilent calls all provided setup functions and return all raised errors
-func SetupSilent(setupFuncs ...SetupFunc) []error {
+//SetupAll calls all provided setup functions and return all raised errors
+func SetupAll(setupFuncs ...SetupFunc) []error {
 	var errs []error
 	for i, v := range setupFuncs {
 		if err := v(); err != nil {

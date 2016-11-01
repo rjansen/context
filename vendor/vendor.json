@@ -3,11 +3,11 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "i1mo4imi3KPAGsCe0fnScVjPXVU=",
+			"checksumSHA1": "hEITZrCjC+H+htQpz/Mknl05fcI=",
 			"origin": "farm.e-pedion.com/repo/logger/vendor/farm.e-pedion.com/repo/config",
 			"path": "farm.e-pedion.com/repo/config",
-			"revision": "ac02d0fc010514841a8620f5fa206fa4b029d109",
-			"revisionTime": "2016-10-24T00:31:21Z"
+			"revision": "63c2944ffd1b11a211bcca35188b84ba81dc110e",
+			"revisionTime": "2016-10-24T01:04:15Z"
 		},
 		{
 			"checksumSHA1": "gqoYIOxu13oWtWm8cr5JGSCJ2hc=",

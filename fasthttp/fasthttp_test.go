@@ -50,6 +50,38 @@ func TestLogWrapper(t *testing.T) {
 	assert.Equal(t, fasthttp.StatusAccepted, ctx.Response.StatusCode())
 }
 
+func TestLogWrapperErr(t *testing.T) {
+	clientMsg := []byte(`{"username": "mock_log_wrapper"}`)
+	uri := "http://loghandle/"
+	mockErr := errors.New("MockErr")
+
+	handler := Log(func(c context.Context, fc *fasthttp.RequestCtx) error {
+		assert.NotEmpty(t, fc.PostBody())
+		assert.True(t, bytes.Contains(fc.PostBody(), clientMsg))
+		assert.NotEmpty(t, fc.URI())
+		assert.True(t, strings.Contains(fc.URI().String(), uri))
+
+		fc.SetStatusCode(fasthttp.StatusInternalServerError)
+		return mockErr
+	})
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.SetBody(clientMsg)
+	ctx.Init(&req, nil, nil)
+	c := context.Background()
+
+	var resultErr error
+	assert.NotPanics(t, func() {
+		resultErr = handler(c, &ctx)
+	})
+
+	assert.NotNil(t, resultErr)
+	assert.Equal(t, mockErr, resultErr)
+	assert.Empty(t, ctx.Response.Body())
+	assert.Equal(t, fasthttp.StatusInternalServerError, ctx.Response.StatusCode())
+}
+
 func TestErrorWrapper(t *testing.T) {
 	clientMsg := []byte(`{"username": "mock_error_wrapper"}`)
 	serverMsg := []byte("context.fasthttp_test.TestErrorWrapper")
@@ -81,6 +113,38 @@ func TestErrorWrapper(t *testing.T) {
 	assert.NotEmpty(t, ctx.Response.Body())
 	assert.True(t, bytes.Contains(ctx.Response.Body(), serverMsg))
 	assert.Equal(t, fasthttp.StatusAccepted, ctx.Response.StatusCode())
+}
+
+func TestErrorWrapperErr(t *testing.T) {
+	clientMsg := []byte(`{"username": "mock_error_wrapper"}`)
+	uri := "http://errorhadle"
+	mockErr := errors.New("MockErr")
+
+	handler := Error(func(c context.Context, fc *fasthttp.RequestCtx) error {
+		assert.NotEmpty(t, fc.PostBody())
+		assert.True(t, bytes.Contains(fc.PostBody(), clientMsg))
+		assert.NotEmpty(t, fc.URI())
+		assert.True(t, strings.Contains(fc.URI().String(), uri))
+
+		fc.SetStatusCode(fasthttp.StatusInternalServerError)
+		return mockErr
+	})
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.SetBody(clientMsg)
+	ctx.Init(&req, nil, nil)
+	c := context.Background()
+
+	var resultErr error
+	assert.NotPanics(t, func() {
+		resultErr = handler(c, &ctx)
+	})
+
+	assert.NotNil(t, resultErr)
+	assert.Equal(t, mockErr, resultErr)
+	assert.NotEmpty(t, ctx.Response.Body())
+	assert.Equal(t, fasthttp.StatusInternalServerError, ctx.Response.StatusCode())
 }
 
 func TestLogAndErrorWrapper(t *testing.T) {

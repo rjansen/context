@@ -13,8 +13,8 @@ func init() {
 	logger.Info("context_test.init")
 }
 
-func TestSetupSilent(t *testing.T) {
-	errs := SetupSilent(
+func TestSetupAll(t *testing.T) {
+	errs := SetupAll(
 		func() error { return nil },
 		func() error { return nil },
 		func() error { return nil },
@@ -25,10 +25,10 @@ func TestSetupSilent(t *testing.T) {
 	assert.Empty(t, errs)
 }
 
-func TestSetupSilentErr(t *testing.T) {
+func TestSetupAllErr(t *testing.T) {
 	var errs []error
 	assert.NotPanics(t, func() {
-		errs = SetupSilent(
+		errs = SetupAll(
 			func() error { return errors.New("context_test.TestSetupErrMock1") },
 			func() error { return errors.New("context_test.TestSetupErrMock2") },
 			func() error { return errors.New("context_test.TestSetupErrMock3") },

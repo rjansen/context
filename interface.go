@@ -4,4 +4,4 @@ package context
 type ErrorFunc func() error
 
 //SetupFunc is a func that initializes and returns error if unexpected results happens
-type SetupFunc func() error
+type SetupFunc ErrorFunc
