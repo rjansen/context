@@ -1,9 +1,10 @@
-package fasthttp
+package fast
 
 import (
 	"bytes"
 	"context"
 	"errors"
+	"farm.e-pedion.com/repo/context/media/proto"
 	"farm.e-pedion.com/repo/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
@@ -14,7 +15,7 @@ import (
 
 func init() {
 	os.Args = append(os.Args, "-ecf", "../test/etc/context/context.yaml")
-	logger.Info("context.fasthttp_test.init")
+	logger.Info("context.fast_test.init")
 }
 
 func TestLogWrapper(t *testing.T) {
@@ -209,6 +210,39 @@ func TestJSONResult(t *testing.T) {
 	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(media.Username)), "Response.Body does not contain media.Username")
 	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(media.Name)), "Response.Body does not contain media.Name")
 	assert.True(t, bytes.Contains(ctx.Response.Header.ContentType(), []byte("application/json")), "Response.ContenType is not application/json")
+}
+
+func TestProtoResult(t *testing.T) {
+	media := &proto.Store{
+		Id:   1,
+		Name: "Proto Buffer Store",
+		Data: []*proto.Store_Data{
+			&proto.Store_Data{
+				Id:    1,
+				Name:  "Proto Data Name",
+				Email: "Proto Data Email",
+			},
+		},
+	}
+
+	uri := "http://resultprotobuf/"
+
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	ctx.Init(&req, nil, nil)
+
+	var resultErr error
+	assert.NotPanics(t, func() {
+		resultErr = ProtoBuf(&ctx, fasthttp.StatusOK, media)
+	})
+
+	assert.Nil(t, resultErr)
+	assert.Equal(t, fasthttp.StatusOK, ctx.Response.StatusCode())
+	assert.NotEmpty(t, ctx.Response.Body())
+	//TODO: Check better if body content is the correct protocol buffer of the message
+	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(media.Name)), "Response.Body does not contain media.Name")
+	assert.True(t, bytes.Contains(ctx.Response.Header.ContentType(), []byte("application/octet-stream")), "Response.ContenType is not application/octet-stream")
 }
 
 func TestStatusResult(t *testing.T) {

@@ -1,4 +1,4 @@
-package fasthttp
+package fast
 
 import (
 	"context"
@@ -108,18 +108,19 @@ func JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 		return err
 	}
 	ctx.SetBody(jsonBytes)
-	ctx.SetContentType("application/json")
+	ctx.SetContentType(json.ContentType)
 	ctx.SetStatusCode(status)
 	return nil
 }
 
+//ProtoBuf writes the provided protocol buffer media to the response
 func ProtoBuf(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	protoBytes, err := proto.MarshalBytes(result)
 	if err != nil {
 		return err
 	}
 	ctx.SetBody(protoBytes)
-	ctx.SetContentType("application/octet-stream")
+	ctx.SetContentType(proto.ContentType)
 	ctx.SetStatusCode(status)
 	return nil
 }

@@ -6,6 +6,13 @@ import (
 	"io"
 )
 
+const (
+	//ContentType is a constant to hold the json content type value
+	ContentType = "application/json"
+	//ContentTypeUTF8 is a constant to hold the utf8 json content type value
+	ContentTypeUTF8 = "application/json; charset=utf-8"
+)
+
 //Marshal writes a json representation of the struct instance
 func Marshal(w io.Writer, data interface{}) error {
 	return json.NewEncoder(w).Encode(&data)
@@ -19,8 +26,8 @@ func Unmarshal(r io.Reader, result interface{}) error {
 //MarshalBytes writes a json representation of the struct instance
 func MarshalBytes(data interface{}) ([]byte, error) {
 	jsonBytes, err := json.Marshal(data)
-	logger.Debug("media.ToJSONBytes",
-		logger.Bytes("jsonBytes", jsonBytes),
+	logger.Debug("json.MarshalBytes",
+		logger.Int("len", len(jsonBytes)),
 		logger.Err(err),
 	)
 	return jsonBytes, err
@@ -29,8 +36,8 @@ func MarshalBytes(data interface{}) ([]byte, error) {
 //UnmarshalBytes reads a json representation into the struct instance
 func UnmarshalBytes(raw []byte, result interface{}) error {
 	err := json.Unmarshal(raw, &result)
-	logger.Debug("media.FromJSONBytes",
-		logger.Bool("resultIsNil", result == nil),
+	logger.Debug("json.UnmarshalBytes",
+		logger.Bool("nilResult", result == nil),
 		logger.Err(err),
 	)
 	return err
