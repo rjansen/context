@@ -1,13 +1,20 @@
 package fast
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"farm.e-pedion.com/repo/context/media/json"
 	"farm.e-pedion.com/repo/context/media/proto"
 	"farm.e-pedion.com/repo/logger"
 	"github.com/valyala/fasthttp"
 	"net/http"
 	"time"
+)
+
+var (
+	ErrInvalidContentType = errors.New("Invalid ContentType. Only: aplication/json, application/octet-stream are valid")
+	ErrInvalidAccept      = errors.New("Invalid Accept. Only: aplication/json, application/octet-stream are valid")
 )
 
 //SimpleHTTPHandler is a contract for fast http handlers
@@ -101,6 +108,32 @@ func Log(handler HTTPHandlerFunc) HTTPHandlerFunc {
 	}
 }
 
+//ReadByContentType reads data from context using the Content-Type header to define the media type
+func ReadByContentType(ctx *fasthttp.RequestCtx, data interface{}) error {
+	contentType := ctx.Request.Header.ContentType()
+	switch {
+	case bytes.Contains(contentType, []byte(json.ContentType)):
+		return ReadJSON(ctx, data)
+	case bytes.Contains(contentType, []byte(proto.ContentType)):
+		return ReadProtoBuff(ctx, data)
+	default:
+		return ErrInvalidContentType
+	}
+}
+
+//WriteByAccept writes data to context using the Accept header to define the media type
+func WriteByAccept(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
+	contentType := ctx.Request.Header.Peek("Accept")
+	switch {
+	case bytes.Contains(contentType, []byte(json.ContentType)):
+		return JSON(ctx, status, result)
+	case bytes.Contains(contentType, []byte(proto.ContentType)):
+		return ProtoBuff(ctx, status, result)
+	default:
+		return ErrInvalidAccept
+	}
+}
+
 //JSON writes the provided json media to the response
 func JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	jsonBytes, err := json.MarshalBytes(result)
@@ -113,8 +146,16 @@ func JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	return nil
 }
 
-//ProtoBuf writes the provided protocol buffer media to the response
-func ProtoBuf(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
+//ReadJSON unmarshals from provided context a json media into data
+func ReadJSON(ctx *fasthttp.RequestCtx, data interface{}) error {
+	if err := json.UnmarshalBytes(ctx.PostBody(), data); err != nil {
+		return err
+	}
+	return nil
+}
+
+//ProtoBuff writes the provided protocol buffer media to the response
+func ProtoBuff(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	protoBytes, err := proto.MarshalBytes(result)
 	if err != nil {
 		return err
@@ -122,6 +163,14 @@ func ProtoBuf(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	ctx.SetBody(protoBytes)
 	ctx.SetContentType(proto.ContentType)
 	ctx.SetStatusCode(status)
+	return nil
+}
+
+//ReadProtoBuff unmarshals from provided context a protocol buffer media into data
+func ReadProtoBuff(ctx *fasthttp.RequestCtx, data interface{}) error {
+	if err := proto.UnmarshalBytes(ctx.PostBody(), data); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -7,11 +7,11 @@ import (
 //Media is an interface to defines a media encoder/decoder contract
 type Media interface {
 	//Marshal writes a json representation of the struct instance
-	Marshal(io.Writer, interface{}) error
+	Marshal(io.Writer) error
 	//Unmarshal reads a json representation into the struct instance
-	Unmarshal(io.Reader, interface{}) error
+	Unmarshal(io.Reader) error
 	//MarshalBytes writes a json representation of the struct instance
-	MarshalBytes(interface{}) ([]byte, error)
+	MarshalBytes() ([]byte, error)
 	//UnmarshalBytes reads a json representation into the struct instance
-	UnmarshalBytes([]byte, interface{}) error
+	UnmarshalBytes([]byte) error
 }

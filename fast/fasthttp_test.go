@@ -212,6 +212,40 @@ func TestJSONResult(t *testing.T) {
 	assert.True(t, bytes.Contains(ctx.Response.Header.ContentType(), []byte("application/json")), "Response.ContenType is not application/json")
 }
 
+func TestJSONByContentType(t *testing.T) {
+	media := &proto.Store{
+		Id:   1,
+		Name: "Proto Buffer Store",
+		Data: []*proto.Store_Data{
+			&proto.Store_Data{
+				Id:    1,
+				Name:  "Proto Data Name",
+				Email: "Proto Data Email",
+			},
+		},
+	}
+
+	uri := "http://resultjsontype/"
+
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.Header.Set("Accept", "application/json")
+	ctx.Init(&req, nil, nil)
+
+	var resultErr error
+	assert.NotPanics(t, func() {
+		resultErr = WriteByAccept(&ctx, fasthttp.StatusOK, media)
+	})
+
+	assert.Nil(t, resultErr)
+	assert.Equal(t, fasthttp.StatusOK, ctx.Response.StatusCode())
+	assert.NotEmpty(t, ctx.Response.Body())
+	//TODO: Check better if body content is the correct protocol buffer of the message
+	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(media.Name)), "Response.Body does not contain media.Name")
+	assert.True(t, bytes.Contains(ctx.Response.Header.ContentType(), []byte("application/json")), "Response.ContenType is not application/json")
+}
+
 func TestProtoResult(t *testing.T) {
 	media := &proto.Store{
 		Id:   1,
@@ -234,7 +268,7 @@ func TestProtoResult(t *testing.T) {
 
 	var resultErr error
 	assert.NotPanics(t, func() {
-		resultErr = ProtoBuf(&ctx, fasthttp.StatusOK, media)
+		resultErr = ProtoBuff(&ctx, fasthttp.StatusOK, media)
 	})
 
 	assert.Nil(t, resultErr)
@@ -243,6 +277,40 @@ func TestProtoResult(t *testing.T) {
 	//TODO: Check better if body content is the correct protocol buffer of the message
 	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(media.Name)), "Response.Body does not contain media.Name")
 	assert.True(t, bytes.Contains(ctx.Response.Header.ContentType(), []byte("application/octet-stream")), "Response.ContenType is not application/octet-stream")
+}
+
+func TestProtoByContentType(t *testing.T) {
+	media := &proto.Store{
+		Id:   1,
+		Name: "Proto Buffer Store",
+		Data: []*proto.Store_Data{
+			&proto.Store_Data{
+				Id:    1,
+				Name:  "Proto Data Name",
+				Email: "Proto Data Email",
+			},
+		},
+	}
+
+	uri := "http://resultprototype/"
+
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.Header.Set("Accept", "application/octet-stream")
+	ctx.Init(&req, nil, nil)
+
+	var resultErr error
+	assert.NotPanics(t, func() {
+		resultErr = WriteByAccept(&ctx, fasthttp.StatusOK, media)
+	})
+
+	assert.Nil(t, resultErr)
+	assert.Equal(t, fasthttp.StatusOK, ctx.Response.StatusCode())
+	assert.NotEmpty(t, ctx.Response.Body())
+	//TODO: Check better if body content is the correct protocol buffer of the message
+	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(media.Name)), "Response.Body does not contain media.Name")
+	assert.True(t, bytes.Contains(ctx.Response.Header.ContentType(), []byte("application/octet-stream")), "Response.ContenType is not application/octect-stream")
 }
 
 func TestStatusResult(t *testing.T) {
@@ -283,4 +351,73 @@ func TestErrResult(t *testing.T) {
 	assert.Equal(t, fasthttp.StatusInternalServerError, ctx.Response.StatusCode())
 	assert.NotEmpty(t, ctx.Response.Body())
 	assert.True(t, bytes.Contains(ctx.Response.Body(), []byte(mockErrorMsg)), "Response.Body does not contains the error message")
+}
+
+func TestJSONRead(t *testing.T) {
+	type mockJSON struct {
+		Username string `json:"username"`
+		Name     string `json:"name"`
+		Age      int    `json:"age"`
+	}
+	rawMedia := `
+	{
+		"username": "mock-raw.json",
+		"name": "Mock Raw Json",
+		"age": 35
+	}
+	`
+	uri := "http://contentjson/"
+
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.SetBody([]byte(rawMedia))
+	ctx.Init(&req, nil, nil)
+
+	var readErr error
+	var media mockJSON
+	assert.NotPanics(t, func() {
+		readErr = ReadJSON(&ctx, &media)
+	})
+
+	assert.Nil(t, readErr)
+	assert.NotZero(t, media)
+	assert.Equal(t, "mock-raw.json", media.Username)
+	assert.Equal(t, "Mock Raw Json", media.Name)
+	assert.Equal(t, 35, media.Age)
+}
+
+func TestJSONReadByContentType(t *testing.T) {
+	type mockJSON struct {
+		Username string `json:"username"`
+		Name     string `json:"name"`
+		Age      int    `json:"age"`
+	}
+	rawMedia := `
+	{
+		"username": "mock-raw.json",
+		"name": "Mock Raw Json",
+		"age": 35
+	}
+	`
+	uri := "http://contentjson/"
+
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.SetBody([]byte(rawMedia))
+	req.Header.SetContentType("application/json")
+	ctx.Init(&req, nil, nil)
+
+	var readErr error
+	var media mockJSON
+	assert.NotPanics(t, func() {
+		readErr = ReadByContentType(&ctx, &media)
+	})
+
+	assert.Nil(t, readErr)
+	assert.NotZero(t, media)
+	assert.Equal(t, "mock-raw.json", media.Username)
+	assert.Equal(t, "Mock Raw Json", media.Name)
+	assert.Equal(t, 35, media.Age)
 }
