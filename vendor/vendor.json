@@ -3,17 +3,17 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "hEITZrCjC+H+htQpz/Mknl05fcI=",
+			"checksumSHA1": "saRdqhwimWjSqWa1TyUQ49i9ZkU=",
 			"origin": "farm.e-pedion.com/repo/logger/vendor/farm.e-pedion.com/repo/config",
 			"path": "farm.e-pedion.com/repo/config",
-			"revision": "393338099d2e295c9c899c97fad4a867e6a5cc28",
-			"revisionTime": "2016-11-03T01:09:53Z"
+			"revision": "32dcefb295ecd0d71ace56f451b355a4467bf998",
+			"revisionTime": "2016-11-13T00:40:02Z"
 		},
 		{
-			"checksumSHA1": "vwP5lmwxBA3oiR4Wly9sinGkWwU=",
+			"checksumSHA1": "EmGmgtgX4HjVr3MyH7FUAjhaz5o=",
 			"path": "farm.e-pedion.com/repo/logger",
-			"revision": "393338099d2e295c9c899c97fad4a867e6a5cc28",
-			"revisionTime": "2016-11-03T01:09:53Z"
+			"revision": "32dcefb295ecd0d71ace56f451b355a4467bf998",
+			"revisionTime": "2016-11-13T00:40:02Z"
 		},
 		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
