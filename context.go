@@ -1,7 +1,19 @@
 package context
 
 import (
+	"errors"
 	"farm.e-pedion.com/repo/logger"
+)
+
+const (
+	ContentTypeHeader   = "Content-Type"
+	ContentLengthHeader = "Content-Length"
+	AcceptHeader        = "Accept"
+)
+
+var (
+	ErrInvalidContentType = errors.New("Invalid ContentType. Only: aplication/json, application/octet-stream are valid")
+	ErrInvalidAccept      = errors.New("Invalid Accept. Only: aplication/json, application/octet-stream are valid")
 )
 
 //SetupAll calls all provided setup functions and return all raised errors

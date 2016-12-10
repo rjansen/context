@@ -3,18 +3,13 @@ package fast
 import (
 	"bytes"
 	"context"
-	"errors"
+	haki "farm.e-pedion.com/repo/context"
 	"farm.e-pedion.com/repo/context/media/json"
 	"farm.e-pedion.com/repo/context/media/proto"
 	"farm.e-pedion.com/repo/logger"
 	"github.com/valyala/fasthttp"
 	"net/http"
 	"time"
-)
-
-var (
-	ErrInvalidContentType = errors.New("Invalid ContentType. Only: aplication/json, application/octet-stream are valid")
-	ErrInvalidAccept      = errors.New("Invalid Accept. Only: aplication/json, application/octet-stream are valid")
 )
 
 //SimpleHTTPHandler is a contract for fast http handlers
@@ -117,20 +112,20 @@ func ReadByContentType(ctx *fasthttp.RequestCtx, data interface{}) error {
 	case bytes.Contains(contentType, []byte(proto.ContentType)):
 		return ReadProtoBuff(ctx, data)
 	default:
-		return ErrInvalidContentType
+		return haki.ErrInvalidContentType
 	}
 }
 
 //WriteByAccept writes data to context using the Accept header to define the media type
 func WriteByAccept(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
-	contentType := ctx.Request.Header.Peek("Accept")
+	contentType := ctx.Request.Header.Peek(haki.AcceptHeader)
 	switch {
 	case bytes.Contains(contentType, []byte(json.ContentType)):
 		return JSON(ctx, status, result)
 	case bytes.Contains(contentType, []byte(proto.ContentType)):
 		return ProtoBuff(ctx, status, result)
 	default:
-		return ErrInvalidAccept
+		return haki.ErrInvalidAccept
 	}
 }
 

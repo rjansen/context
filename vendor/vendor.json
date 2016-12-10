@@ -37,6 +37,12 @@
 			"revisionTime": "2016-10-23T18:32:13Z"
 		},
 		{
+			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "8ee79997227bf9b34611aee7946ae64735e6fd93",
+			"revisionTime": "2016-11-17T03:31:26Z"
+		},
+		{
 			"checksumSHA1": "8OPDk+bKyRGJoKcS4QNw9F7dpE8=",
 			"origin": "farm.e-pedion.com/repo/logger/vendor/github.com/hashicorp/hcl",
 			"path": "github.com/hashicorp/hcl",
@@ -184,6 +190,12 @@
 			"path": "github.com/pkg/sftp",
 			"revision": "0cd9ea3ba03c9a2d483d3acd337fe147ff1a0086",
 			"revisionTime": "2016-10-23T18:32:13Z"
+		},
+		{
+			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "b061729afc07e77a8aa4fad0a2fd840958f1942a",
+			"revisionTime": "2016-09-27T10:08:44Z"
 		},
 		{
 			"checksumSHA1": "59wTbS4fE2282Q88NrBYImbFGbo=",

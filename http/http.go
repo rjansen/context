@@ -2,9 +2,12 @@ package http
 
 import (
 	"context"
+	haki "farm.e-pedion.com/repo/context"
 	"farm.e-pedion.com/repo/context/media/json"
 	"farm.e-pedion.com/repo/logger"
+	"github.com/satori/go.uuid"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -72,19 +75,50 @@ func (w *responseWriter) Flush() {
 	}
 }
 
-type ErrorHandler func(http.ResponseWriter, *http.Request) error
+//SimpleHTTPHandler is a contract for fast http handlers
+type SimpleHTTPHandler interface {
+	ServeHTTP(http.ResponseWriter, *http.Request)
+}
 
-func (h ErrorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := h(w, r); err != nil {
+//HTTPHandlerFunc is a function to handle fasthttp requrests
+type HTTPHandlerFunc func(http.ResponseWriter, *http.Request) error
+
+//HandleRequest is the contract with HTTPHandler interface
+func (h HTTPHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) error {
+	return h(w, r)
+}
+
+//HTTPHandler is a contract for fast http handlers
+type HTTPHandler interface {
+	ServeHTTP(http.ResponseWriter, *http.Request) error
+}
+
+func errorHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
+	if err := handler(w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	return nil
+}
+
+//Error wraps the provided HTTPHandlerFunc with exception control
+func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return errorHandle(handler, w, r)
 	}
 }
 
-type LogHandler func(http.ResponseWriter, *http.Request) error
+type ErrorHandler func(http.ResponseWriter, *http.Request) error
 
-func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h ErrorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+}
+
+func logHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
+	tid := uuid.NewV4().String()
+	r = r.WithContext(context.WithValue(r.Context(), "tid", tid))
 	start := time.Now()
 	logger.Info("contex.Request",
+		logger.String("tid", tid),
 		logger.String("method", r.Method),
 		logger.String("path", r.URL.Path),
 	)
@@ -93,8 +127,10 @@ func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 	r = r.WithContext(context.WithValue(r.Context(), "log", logger.Get()))
 	rw := NewResponseWriter(w)
-	if err := h(rw, r); err != nil {
+	var err error
+	if err = handler(rw, r); err != nil {
 		logger.Error("contex.LogHandler.Error",
+			logger.String("tid", tid),
 			logger.String("method", r.Method),
 			logger.String("path", r.URL.Path),
 			logger.Err(err),
@@ -102,19 +138,78 @@ func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	response := rw.(ResponseWriter)
 	logger.Info("context.Response",
+		logger.String("tid", tid),
 		logger.String("method", r.Method),
 		logger.String("path", r.URL.Path),
 		logger.String("status", http.StatusText(response.Status())),
 		logger.Int("size", response.Size()),
 		logger.Duration("requestTime", time.Since(start)),
 	)
+	return err
+}
+
+//Log wraps the provided HTTPHandlerFunc with access logging control
+func Log(handler HTTPHandlerFunc) HTTPHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return logHandle(handler, w, r)
+	}
+}
+
+type LogHandler func(http.ResponseWriter, *http.Request) error
+
+func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	logHandle(HTTPHandlerFunc(h), w, r)
+}
+
+//ReadByContentType reads data from context using the Content-Type header to define the media type
+func ReadByContentType(r *http.Request, data interface{}) error {
+	contentType := r.Header.Get(haki.ContentTypeHeader)
+	switch {
+	case strings.Contains(contentType, json.ContentType):
+		return ReadJSON(r, data)
+	// case strings.Contains(contentType, proto.ContentType):
+	// 	return ReadProtoBuff(r, data)
+	default:
+		return haki.ErrInvalidContentType
+	}
+}
+
+//WriteByAccept writes data to context using the Accept header to define the media type
+func WriteByAccept(w http.ResponseWriter, r *http.Request, status int, result interface{}) error {
+	contentType := r.Header.Get(haki.AcceptHeader)
+	switch {
+	case strings.Contains(contentType, json.ContentType):
+		return JSON(w, status, result)
+	// case bytes.Contains(contentType, []byte(proto.ContentType)):
+	// 	return ProtoBuff(ctx, status, result)
+	default:
+		return haki.ErrInvalidAccept
+	}
+}
+
+//ReadJSON unmarshals from provided context a json media into data
+func ReadJSON(r *http.Request, data interface{}) error {
+	if err := json.Unmarshal(r.Body, data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Bytes(w http.ResponseWriter, status int, result []byte) error {
+	_, err := w.Write(result)
+	if err != nil {
+		return err
+	}
+	w.Header().Set(haki.ContentTypeHeader, "application/octet-stream")
+	w.WriteHeader(status)
+	return nil
 }
 
 func JSON(w http.ResponseWriter, status int, result interface{}) error {
 	if err := json.Marshal(w, result); err != nil {
 		return err
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(haki.ContentTypeHeader, json.ContentType)
 	w.WriteHeader(status)
 	return nil
 }
@@ -125,7 +220,6 @@ func Status(w http.ResponseWriter, status int) error {
 }
 
 func Err(w http.ResponseWriter, err error) error {
-	//w.WriteHeader(http.StatusInternalServerError)
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 	return err
 }
@@ -133,7 +227,7 @@ func Err(w http.ResponseWriter, err error) error {
 type Handler struct {
 }
 
-func (h Handler) JSON(w http.ResponseWriter, status int, result json.Media) error {
+func (h Handler) JSON(w http.ResponseWriter, status int, result interface{}) error {
 	return JSON(w, status, result)
 }
 
