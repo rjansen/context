@@ -93,6 +93,13 @@ type HTTPHandler interface {
 	ServeHTTP(http.ResponseWriter, *http.Request) error
 }
 
+//Handler wraps a library handler func nto a http handler func
+func Handler(handler HTTPHandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, h *http.Request) {
+		handler(w, h)
+	}
+}
+
 func errorHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
 	if err := handler(w, r); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -224,17 +231,17 @@ func Err(w http.ResponseWriter, err error) error {
 	return err
 }
 
-type Handler struct {
+type BaseHandler struct {
 }
 
-func (h Handler) JSON(w http.ResponseWriter, status int, result interface{}) error {
+func (h BaseHandler) JSON(w http.ResponseWriter, status int, result interface{}) error {
 	return JSON(w, status, result)
 }
 
-func (h Handler) Status(w http.ResponseWriter, status int) error {
+func (h BaseHandler) Status(w http.ResponseWriter, status int) error {
 	return Status(w, status)
 }
 
-func (h Handler) Err(w http.ResponseWriter, err error) error {
+func (h BaseHandler) Err(w http.ResponseWriter, err error) error {
 	return Err(w, err)
 }

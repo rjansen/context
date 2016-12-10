@@ -416,3 +416,40 @@ func TestJSONReadByContentType(t *testing.T) {
 	assert.Equal(t, "Mock Raw Json", media.Name)
 	assert.Equal(t, 35, media.Age)
 }
+
+func TestHandlerResult(t *testing.T) {
+	serverMsg := []byte(`
+	{
+		"server": "mock-server",
+		"token": "Mock Raw Json Token",
+		"ttl": 30m
+	}
+	`)
+
+	rawMedia := `
+	{
+		"username": "mock-raw.json",
+		"name": "Mock Raw Json",
+		"age": 35
+	}
+	`
+	uri := "http://contentjson/handler"
+	req, err := http.NewRequest("POST", uri, bytes.NewBufferString(rawMedia))
+	assert.Nil(t, err)
+	rec := httptest.NewRecorder()
+	var resultErr error
+	assert.NotPanics(t, func() {
+		handler := Handler(
+			func(w http.ResponseWriter, r *http.Request) error {
+				resultErr = Bytes(w, http.StatusFound, serverMsg)
+				return resultErr
+			},
+		)
+		handler(rec, req)
+	})
+
+	assert.Nil(t, resultErr)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.NotEmpty(t, rec.Body.Bytes())
+	assert.Equal(t, rec.Body.Bytes(), serverMsg)
+}

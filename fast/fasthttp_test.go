@@ -421,3 +421,41 @@ func TestJSONReadByContentType(t *testing.T) {
 	assert.Equal(t, "Mock Raw Json", media.Name)
 	assert.Equal(t, 35, media.Age)
 }
+
+func TestHandlerResult(t *testing.T) {
+	type mockJSON struct {
+		Username string `json:"username"`
+		Name     string `json:"name"`
+		Age      int    `json:"age"`
+	}
+	rawMedia := `
+	{
+		"username": "mock-raw.json",
+		"name": "Mock Raw Json",
+		"age": 35
+	}
+	`
+	uri := "http://resultstatus/handler"
+
+	var ctx fasthttp.RequestCtx
+	var req fasthttp.Request
+	req.SetRequestURI(uri)
+	req.SetBody([]byte(rawMedia))
+	req.Header.SetContentType("application/json")
+	ctx.Init(&req, nil, nil)
+
+	var resultErr error
+	assert.NotPanics(t, func() {
+		handler := Handler(
+			func(c context.Context, ctx *fasthttp.RequestCtx) error {
+				resultErr = Status(ctx, fasthttp.StatusFound)
+				return resultErr
+			},
+		)
+		handler(&ctx)
+	})
+
+	assert.Nil(t, resultErr)
+	assert.Equal(t, fasthttp.StatusFound, ctx.Response.StatusCode())
+	assert.Empty(t, ctx.Response.Body())
+}

@@ -30,6 +30,15 @@ type HTTPHandler interface {
 	HandleRequest(context.Context, *fasthttp.RequestCtx) error
 }
 
+//Handler wraps a library handler func nto a fasthttp handler func
+func Handler(handler HTTPHandlerFunc) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		c, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		handler(c, ctx)
+	}
+}
+
 func errorHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestCtx) error {
 	if err := handler(c, fc); err != nil {
 		fc.Error(err.Error(), fasthttp.StatusInternalServerError)
@@ -182,21 +191,21 @@ func Err(ctx *fasthttp.RequestCtx, err error) error {
 	return err
 }
 
-//Handler is a struct to add response helper function to other handlers
-type Handler struct {
+//BaseHandler is a struct to add response helper function to other handlers
+type BaseHandler struct {
 }
 
 //JSON writes a json media to response
-func (h Handler) JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
+func (h BaseHandler) JSON(ctx *fasthttp.RequestCtx, status int, result interface{}) error {
 	return JSON(ctx, status, result)
 }
 
 //Status writes the provided status to response
-func (h Handler) Status(ctx *fasthttp.RequestCtx, status int) error {
+func (h BaseHandler) Status(ctx *fasthttp.RequestCtx, status int) error {
 	return Status(ctx, status)
 }
 
 //Err writes a error to response
-func (h Handler) Err(ctx *fasthttp.RequestCtx, err error) error {
+func (h BaseHandler) Err(ctx *fasthttp.RequestCtx, err error) error {
 	return Err(ctx, err)
 }
