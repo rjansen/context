@@ -203,21 +203,21 @@ func ReadJSON(r *http.Request, data interface{}) error {
 }
 
 func Bytes(w http.ResponseWriter, status int, result []byte) error {
+	w.Header().Set(haki.ContentTypeHeader, "application/octet-stream")
+	w.WriteHeader(status)
 	_, err := w.Write(result)
 	if err != nil {
 		return err
 	}
-	w.Header().Set(haki.ContentTypeHeader, "application/octet-stream")
-	w.WriteHeader(status)
 	return nil
 }
 
 func JSON(w http.ResponseWriter, status int, result interface{}) error {
+	w.Header().Set(haki.ContentTypeHeader, json.ContentType)
+	w.WriteHeader(status)
 	if err := json.Marshal(w, result); err != nil {
 		return err
 	}
-	w.Header().Set(haki.ContentTypeHeader, json.ContentType)
-	w.WriteHeader(status)
 	return nil
 }
 

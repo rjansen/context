@@ -323,7 +323,7 @@ func TestBytesResult(t *testing.T) {
 	})
 
 	assert.Nil(t, resultErr)
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.NotEmpty(t, rec.Body.Bytes())
 	assert.Equal(t, rec.Body.Bytes(), serverMsg)
 }
@@ -449,7 +449,7 @@ func TestHandlerResult(t *testing.T) {
 	})
 
 	assert.Nil(t, resultErr)
-	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, http.StatusFound, rec.Code)
 	assert.NotEmpty(t, rec.Body.Bytes())
 	assert.Equal(t, rec.Body.Bytes(), serverMsg)
 }
