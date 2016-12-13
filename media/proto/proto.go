@@ -3,8 +3,8 @@ package proto
 import (
 	"bytes"
 	"errors"
-	"farm.e-pedion.com/repo/logger"
 	"github.com/golang/protobuf/proto"
+	"github.com/rjansen/l"
 	"io"
 )
 
@@ -54,9 +54,9 @@ func MarshalBytes(data interface{}) ([]byte, error) {
 		return nil, err
 	}
 	protoBytes, err := proto.Marshal(msg)
-	logger.Debug("proto.MarshalBytes",
-		logger.Int("len", len(protoBytes)),
-		logger.Err(err),
+	l.Debug("proto.MarshalBytes",
+		l.Int("len", len(protoBytes)),
+		l.Err(err),
 	)
 	return protoBytes, err
 }
@@ -68,9 +68,9 @@ func UnmarshalBytes(raw []byte, result interface{}) error {
 		return err
 	}
 	err = proto.Unmarshal(raw, msg)
-	logger.Debug("proto.UnmarshalBytes",
-		logger.Bool("nilResult", result == nil),
-		logger.Err(err),
+	l.Debug("proto.UnmarshalBytes",
+		l.Bool("nilResult", result == nil),
+		l.Err(err),
 	)
 	return err
 }

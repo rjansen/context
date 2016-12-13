@@ -3,7 +3,7 @@ package proto
 import (
 	"fmt"
 	// "errors"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/l"
 	// "github.com/golang/protobuf/proto"
 	"bytes"
 	"github.com/stretchr/testify/assert"
@@ -15,8 +15,8 @@ import (
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "../../test/etc/context/context.yaml")
-	logger.Info("context.media.proto_test.init")
+	os.Args = append(os.Args, "-ecf", "../../test/etc/haki/haki.yaml")
+	l.Info("context.media.proto_test.init")
 }
 
 func TestProtoMarshalAndUnmarshalBytes(t *testing.T) {

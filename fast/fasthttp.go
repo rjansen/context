@@ -3,10 +3,10 @@ package fast
 import (
 	"bytes"
 	"context"
-	haki "farm.e-pedion.com/repo/context"
-	"farm.e-pedion.com/repo/context/media/json"
-	"farm.e-pedion.com/repo/context/media/proto"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/haki"
+	"github.com/rjansen/haki/media/json"
+	"github.com/rjansen/haki/media/proto"
+	"github.com/rjansen/l"
 	"github.com/valyala/fasthttp"
 	"net/http"
 	"time"
@@ -64,35 +64,35 @@ func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
 
 func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestCtx) error {
 	start := time.Now()
-	logger.Info("contex.Request",
-		logger.Int64("tid", int64(fc.ConnID())),
-		logger.Int64("rid", int64(fc.ConnRequestNum())),
-		logger.Bytes("method", fc.Method()),
-		logger.Bytes("path", fc.Path()),
+	l.Info("contex.Request",
+		l.Int64("tid", int64(fc.ConnID())),
+		l.Int64("rid", int64(fc.ConnRequestNum())),
+		l.Bytes("method", fc.Method()),
+		l.Bytes("path", fc.Path()),
 	)
-	logger.Debug("context.Context",
-		logger.Bool("ctxIsNil", fc == nil),
-		logger.Bool("containerIsNil", c == nil),
+	l.Debug("context.Context",
+		l.Bool("ctxIsNil", fc == nil),
+		l.Bool("containerIsNil", c == nil),
 	)
-	c = context.WithValue(c, "log", logger.Get())
+	c = context.WithValue(c, "log", l.Get())
 	var err error
 	if err = handler(c, fc); err != nil {
-		logger.Error("contex.LogHandler.Error",
-			logger.Int64("tid", int64(fc.ConnID())),
-			logger.Int64("rid", int64(fc.ConnRequestNum())),
-			logger.Bytes("method", fc.Method()),
-			logger.Bytes("path", fc.Path()),
-			logger.Err(err),
+		l.Error("contex.LogHandler.Error",
+			l.Int64("tid", int64(fc.ConnID())),
+			l.Int64("rid", int64(fc.ConnRequestNum())),
+			l.Bytes("method", fc.Method()),
+			l.Bytes("path", fc.Path()),
+			l.Err(err),
 		)
 	}
-	logger.Info("context.Response",
-		logger.Int64("tid", int64(fc.ConnID())),
-		logger.Int64("rid", int64(fc.ConnRequestNum())),
-		logger.Bytes("method", fc.Method()),
-		logger.Bytes("path", fc.Path()),
-		logger.String("status", http.StatusText(fc.Response.StatusCode())),
-		logger.Int("size", fc.Response.Header.ContentLength()),
-		logger.Duration("requestTime", time.Since(start)),
+	l.Info("context.Response",
+		l.Int64("tid", int64(fc.ConnID())),
+		l.Int64("rid", int64(fc.ConnRequestNum())),
+		l.Bytes("method", fc.Method()),
+		l.Bytes("path", fc.Path()),
+		l.String("status", http.StatusText(fc.Response.StatusCode())),
+		l.Int("size", fc.Response.Header.ContentLength()),
+		l.Duration("requestTime", time.Since(start)),
 	)
 	return err
 }

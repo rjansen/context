@@ -1,8 +1,8 @@
-package context
+package haki
 
 import (
 	"errors"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/l"
 )
 
 const (
@@ -21,10 +21,10 @@ func SetupAll(setupFuncs ...SetupFunc) []error {
 	var errs []error
 	for i, v := range setupFuncs {
 		if err := v(); err != nil {
-			logger.Warn("contex.SetupSilent",
-				logger.Int("index", i),
-				logger.Struct("func", v),
-				logger.Err(err),
+			l.Warn("contex.SetupSilent",
+				l.Int("index", i),
+				l.Struct("func", v),
+				l.Err(err),
 			)
 			errs = append(errs, err)
 		}
@@ -36,10 +36,10 @@ func SetupAll(setupFuncs ...SetupFunc) []error {
 func Setup(setupFuncs ...SetupFunc) error {
 	for i, v := range setupFuncs {
 		if err := v(); err != nil {
-			logger.Error("contex.Setup",
-				logger.Int("index", i),
-				logger.Struct("func", v),
-				logger.Err(err),
+			l.Error("contex.Setup",
+				l.Int("index", i),
+				l.Struct("func", v),
+				l.Err(err),
 			)
 			return err
 		}

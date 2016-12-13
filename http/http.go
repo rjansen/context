@@ -2,9 +2,9 @@ package http
 
 import (
 	"context"
-	haki "farm.e-pedion.com/repo/context"
-	"farm.e-pedion.com/repo/context/media/json"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/haki"
+	"github.com/rjansen/haki/media/json"
+	"github.com/rjansen/l"
 	"github.com/satori/go.uuid"
 	"net/http"
 	"strings"
@@ -124,33 +124,33 @@ func logHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) 
 	tid := uuid.NewV4().String()
 	r = r.WithContext(context.WithValue(r.Context(), "tid", tid))
 	start := time.Now()
-	logger.Info("contex.Request",
-		logger.String("tid", tid),
-		logger.String("method", r.Method),
-		logger.String("path", r.URL.Path),
+	l.Info("contex.Request",
+		l.String("tid", tid),
+		l.String("method", r.Method),
+		l.String("path", r.URL.Path),
 	)
-	logger.Debug("context.Context",
-		logger.Bool("ctxIsNil", r.Context() == nil),
+	l.Debug("context.Context",
+		l.Bool("ctxIsNil", r.Context() == nil),
 	)
-	r = r.WithContext(context.WithValue(r.Context(), "log", logger.Get()))
+	r = r.WithContext(context.WithValue(r.Context(), "log", l.Get()))
 	rw := NewResponseWriter(w)
 	var err error
 	if err = handler(rw, r); err != nil {
-		logger.Error("contex.LogHandler.Error",
-			logger.String("tid", tid),
-			logger.String("method", r.Method),
-			logger.String("path", r.URL.Path),
-			logger.Err(err),
+		l.Error("contex.LogHandler.Error",
+			l.String("tid", tid),
+			l.String("method", r.Method),
+			l.String("path", r.URL.Path),
+			l.Err(err),
 		)
 	}
 	response := rw.(ResponseWriter)
-	logger.Info("context.Response",
-		logger.String("tid", tid),
-		logger.String("method", r.Method),
-		logger.String("path", r.URL.Path),
-		logger.String("status", http.StatusText(response.Status())),
-		logger.Int("size", response.Size()),
-		logger.Duration("requestTime", time.Since(start)),
+	l.Info("context.Response",
+		l.String("tid", tid),
+		l.String("method", r.Method),
+		l.String("path", r.URL.Path),
+		l.String("status", http.StatusText(response.Status())),
+		l.Int("size", response.Size()),
+		l.Duration("requestTime", time.Since(start)),
 	)
 	return err
 }

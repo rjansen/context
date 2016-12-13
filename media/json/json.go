@@ -2,7 +2,7 @@ package json
 
 import (
 	"encoding/json"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/l"
 	"io"
 )
 
@@ -26,9 +26,9 @@ func Unmarshal(r io.Reader, result interface{}) error {
 //MarshalBytes writes a json representation of the struct instance
 func MarshalBytes(data interface{}) ([]byte, error) {
 	jsonBytes, err := json.Marshal(data)
-	logger.Debug("json.MarshalBytes",
-		logger.Int("len", len(jsonBytes)),
-		logger.Err(err),
+	l.Debug("json.MarshalBytes",
+		l.Int("len", len(jsonBytes)),
+		l.Err(err),
 	)
 	return jsonBytes, err
 }
@@ -36,9 +36,9 @@ func MarshalBytes(data interface{}) ([]byte, error) {
 //UnmarshalBytes reads a json representation into the struct instance
 func UnmarshalBytes(raw []byte, result interface{}) error {
 	err := json.Unmarshal(raw, &result)
-	logger.Debug("json.UnmarshalBytes",
-		logger.Bool("nilResult", result == nil),
-		logger.Err(err),
+	l.Debug("json.UnmarshalBytes",
+		l.Bool("nilResult", result == nil),
+		l.Err(err),
 	)
 	return err
 }

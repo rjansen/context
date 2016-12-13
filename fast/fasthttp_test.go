@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"farm.e-pedion.com/repo/context/media/proto"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/haki/media/proto"
+	"github.com/rjansen/l"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 	"os"
@@ -14,8 +14,8 @@ import (
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "../test/etc/context/context.yaml")
-	logger.Info("context.fast_test.init")
+	os.Args = append(os.Args, "-ecf", "../test/etc/haki/haki.yaml")
+	l.Info("context.fast_test.init")
 }
 
 func TestLogWrapper(t *testing.T) {

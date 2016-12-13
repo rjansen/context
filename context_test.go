@@ -1,16 +1,16 @@
-package context
+package haki
 
 import (
 	"errors"
-	"farm.e-pedion.com/repo/logger"
+	"github.com/rjansen/l"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "./test/etc/context/context.yaml")
-	logger.Info("context_test.init")
+	os.Args = append(os.Args, "-ecf", "./test/etc/haki/haki.yaml")
+	l.Info("context_test.init")
 }
 
 func TestSetupAll(t *testing.T) {

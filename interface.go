@@ -1,4 +1,4 @@
-package context
+package haki
 
 //ErrorFunc is a func that returns error
 type ErrorFunc func() error
