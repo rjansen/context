@@ -1,4 +1,4 @@
 haki*coverage*
-#vendor/*/
+vendor/*/
 *.pprof
 *.test
