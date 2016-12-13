@@ -1,4 +1,4 @@
-context*coverage*
-vendor/*/
+haki*coverage*
+#vendor/*/
 *.pprof
 *.test
