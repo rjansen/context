@@ -83,6 +83,9 @@ type SimpleHTTPHandler interface {
 //HTTPHandlerFunc is a function to handle fasthttp requrests
 type HTTPHandlerFunc func(http.ResponseWriter, *http.Request) error
 
+//HTTPHandlerWrapper is a function to create handler wraps to execute like a chain mechanism between the handlers
+type HTTPHandlerWrapper func(HTTPHandlerFunc) HTTPHandlerFunc
+
 //HandleRequest is the contract with HTTPHandler interface
 func (h HTTPHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) error {
 	return h(w, r)
@@ -91,6 +94,14 @@ func (h HTTPHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) error
 //HTTPHandler is a contract for fast http handlers
 type HTTPHandler interface {
 	ServeHTTP(http.ResponseWriter, *http.Request) error
+}
+
+func Wrap(h HTTPHandlerFunc, wrappers ...HTTPHandlerWrapper) http.HandlerFunc {
+	currentHandler := h
+	for _, w := range wrappers {
+		currentHandler = w(currentHandler)
+	}
+	return Handler(currentHandler)
 }
 
 //Handler wraps a library handler func nto a http handler func
@@ -118,6 +129,7 @@ func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
 type ErrorHandler func(http.ResponseWriter, *http.Request) error
 
 func (h ErrorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	errorHandle(HTTPHandlerFunc(h), w, r)
 }
 
 func logHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
@@ -127,23 +139,22 @@ func logHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) 
 		l.String("tid", tid),
 		l.String("method", r.Method),
 		l.String("path", r.URL.Path),
-		l.String("auth", "anonymous"),
 	)
 	start := time.Now()
-	logger.Info("contex.Request")
-	logger.Debug("context.Context",
+	logger.Info("haki.hhtp.Request",
 		l.Bool("ctxIsNil", r.Context() == nil),
 	)
-	r = r.WithContext(context.WithValue(r.Context(), "log", logger))
+
+	r = set(r, ContextKeys.LOG, logger)
 	rw := NewResponseWriter(w)
 	var err error
 	if err = handler(rw, r); err != nil {
-		logger.Error("contex.LogHandler.Error",
+		logger.Error("haki.http.RequestErr",
 			l.Err(err),
 		)
 	}
 	response := rw.(ResponseWriter)
-	logger.Info("context.Response",
+	logger.Info("haki.http.Response",
 		l.String("status", http.StatusText(response.Status())),
 		l.Int("size", response.Size()),
 		l.Duration("requestTime", time.Since(start)),
@@ -162,6 +173,67 @@ type LogHandler func(http.ResponseWriter, *http.Request) error
 
 func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logHandle(HTTPHandlerFunc(h), w, r)
+}
+
+func auditHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
+	start := time.Now()
+	tid := uuid.NewV4().String()
+	r = r.WithContext(context.WithValue(r.Context(), "tid", tid))
+	identity := &Identity{
+		Token: "tanonymous",
+		Value: map[string]interface{}{
+			"ID":   "uanonymous",
+			"Name": "User Anonymous",
+		},
+	}
+	logger := l.WithFields(
+		l.String("tid", tid),
+		l.String("method", r.Method),
+		l.String("path", r.URL.Path),
+		l.String("token", identity.Token),
+	)
+	auditor := &Auditor{
+		Log:      logger,
+		Identity: identity,
+	}
+	auditor.Log.Info("haki.http.Request",
+		l.Bool("ctxIsNil", r.Context() == nil),
+	)
+
+	r = set(r, ContextKeys.LOG, logger)
+	r = set(r, ContextKeys.TOKEN, identity.Token)
+	r = set(r, ContextKeys.IDENTITY, identity)
+	r = set(r, ContextKeys.AUDITOR, auditor)
+
+	rw := NewResponseWriter(w)
+	var err error
+	if err = handler(rw, r); err != nil {
+		auditor.Log.Error("haki.http.RequestErr",
+			l.Err(err),
+		)
+	}
+	response := rw.(ResponseWriter)
+	auditor.Log.Info("haki.http.Response",
+		l.String("status", http.StatusText(response.Status())),
+		l.Int("size", response.Size()),
+		l.Duration("requestTime", time.Since(start)),
+	)
+	return err
+}
+
+//Audit wraps the provided HTTPHandlerFunc with access logging, error and audit control
+func Audit(handler HTTPHandlerFunc) HTTPHandlerFunc {
+	return Error(
+		func(w http.ResponseWriter, r *http.Request) error {
+			return auditHandle(handler, w, r)
+		},
+	)
+}
+
+type AuditHandler func(http.ResponseWriter, *http.Request) error
+
+func (h AuditHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	auditHandle(HTTPHandlerFunc(h), w, r)
 }
 
 //ReadByContentType reads data from context using the Content-Type header to define the media type

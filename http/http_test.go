@@ -154,7 +154,7 @@ func TestLogAndErrorWrapper(t *testing.T) {
 	serverMsg := []byte("context.fasthttp_test.TestLogAndErrorWrapper")
 	uri := "http://loghandle/loganderror/"
 
-	handler := Log(Error(func(w http.ResponseWriter, r *http.Request) error {
+	handler := Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 		assert.Nil(t, err)
 		assert.NotEmpty(t, bodyBytes)
@@ -165,7 +165,46 @@ func TestLogAndErrorWrapper(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 		_, err = w.Write(serverMsg)
 		return err
-	}))
+	}, Log, Error)
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(clientMsg))
+	assert.Nil(t, err)
+	assert.NotPanics(t, func() {
+		handler(rec, req)
+	})
+
+	assert.Equal(t, http.StatusAccepted, rec.Code)
+	assert.NotEmpty(t, rec.Body.Bytes())
+	assert.True(t, bytes.Contains(rec.Body.Bytes(), serverMsg))
+}
+
+func TestAuditLogAndErrorWrapper(t *testing.T) {
+	clientMsg := []byte(`{"username": "mock_log_error_wrapper"}`)
+	serverMsg := []byte("context.fasthttp_test.TestLogAndErrorWrapper")
+	uri := "http://loghandle/loganderror/"
+
+	handler := Audit(func(w http.ResponseWriter, r *http.Request) error {
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		assert.Nil(t, err)
+		assert.NotEmpty(t, bodyBytes)
+		assert.True(t, bytes.Contains(bodyBytes, clientMsg))
+		assert.NotEmpty(t, r.URL.Path)
+		assert.True(t, strings.Contains(uri, r.URL.Path))
+
+		assert.NotNil(t, GetLog(r))
+		assert.NotZero(t, GetToken(r))
+		assert.NotNil(t, GetIdentity(r))
+		auditor := GetAuditor(r)
+		assert.NotNil(t, auditor)
+
+		assert.NotNil(t, auditor.Log)
+		assert.NotNil(t, auditor.Identity)
+
+		w.WriteHeader(http.StatusAccepted)
+		_, err = w.Write(serverMsg)
+		return err
+	})
 
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(clientMsg))

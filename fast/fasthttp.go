@@ -69,7 +69,6 @@ func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestC
 		l.Int64("rid", int64(fc.ConnRequestNum())),
 		l.Bytes("method", fc.Method()),
 		l.Bytes("path", fc.Path()),
-		l.String("auth", "anonymous"),
 	)
 	logger.Info("contex.Request")
 	logger.Debug("context.Context",
