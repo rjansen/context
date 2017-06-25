@@ -123,31 +123,27 @@ func (h ErrorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func logHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
 	tid := uuid.NewV4().String()
 	r = r.WithContext(context.WithValue(r.Context(), "tid", tid))
-	start := time.Now()
-	l.Info("contex.Request",
+	logger := l.WithFields(
 		l.String("tid", tid),
 		l.String("method", r.Method),
 		l.String("path", r.URL.Path),
+		l.String("auth", "anonymous"),
 	)
-	l.Debug("context.Context",
+	start := time.Now()
+	logger.Info("contex.Request")
+	logger.Debug("context.Context",
 		l.Bool("ctxIsNil", r.Context() == nil),
 	)
-	r = r.WithContext(context.WithValue(r.Context(), "log", l.Get()))
+	r = r.WithContext(context.WithValue(r.Context(), "log", logger))
 	rw := NewResponseWriter(w)
 	var err error
 	if err = handler(rw, r); err != nil {
-		l.Error("contex.LogHandler.Error",
-			l.String("tid", tid),
-			l.String("method", r.Method),
-			l.String("path", r.URL.Path),
+		logger.Error("contex.LogHandler.Error",
 			l.Err(err),
 		)
 	}
 	response := rw.(ResponseWriter)
-	l.Info("context.Response",
-		l.String("tid", tid),
-		l.String("method", r.Method),
-		l.String("path", r.URL.Path),
+	logger.Info("context.Response",
 		l.String("status", http.StatusText(response.Status())),
 		l.Int("size", response.Size()),
 		l.Duration("requestTime", time.Since(start)),

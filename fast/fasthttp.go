@@ -64,32 +64,26 @@ func Error(handler HTTPHandlerFunc) HTTPHandlerFunc {
 
 func logHandle(handler HTTPHandlerFunc, c context.Context, fc *fasthttp.RequestCtx) error {
 	start := time.Now()
-	l.Info("contex.Request",
+	logger := l.WithFields(
 		l.Int64("tid", int64(fc.ConnID())),
 		l.Int64("rid", int64(fc.ConnRequestNum())),
 		l.Bytes("method", fc.Method()),
 		l.Bytes("path", fc.Path()),
+		l.String("auth", "anonymous"),
 	)
-	l.Debug("context.Context",
+	logger.Info("contex.Request")
+	logger.Debug("context.Context",
 		l.Bool("ctxIsNil", fc == nil),
 		l.Bool("containerIsNil", c == nil),
 	)
-	c = context.WithValue(c, "log", l.Get())
+	c = context.WithValue(c, "log", logger)
 	var err error
 	if err = handler(c, fc); err != nil {
-		l.Error("contex.LogHandler.Error",
-			l.Int64("tid", int64(fc.ConnID())),
-			l.Int64("rid", int64(fc.ConnRequestNum())),
-			l.Bytes("method", fc.Method()),
-			l.Bytes("path", fc.Path()),
+		logger.Error("contex.LogHandler.Error",
 			l.Err(err),
 		)
 	}
-	l.Info("context.Response",
-		l.Int64("tid", int64(fc.ConnID())),
-		l.Int64("rid", int64(fc.ConnRequestNum())),
-		l.Bytes("method", fc.Method()),
-		l.Bytes("path", fc.Path()),
+	logger.Info("context.Response",
 		l.String("status", http.StatusText(fc.Response.StatusCode())),
 		l.Int("size", fc.Response.Header.ContentLength()),
 		l.Duration("requestTime", time.Since(start)),

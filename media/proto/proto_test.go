@@ -4,18 +4,21 @@ import (
 	"fmt"
 	// "errors"
 	"github.com/rjansen/l"
+	"github.com/rjansen/l/zap"
 	// "github.com/golang/protobuf/proto"
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	// "io"
 	"io/ioutil"
-	"os"
 	"testing"
 	"testing/iotest"
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "../../test/etc/haki/haki.yaml")
+	// os.Args = append(os.Args, "-ecf", "../../test/etc/haki/haki.yaml")
+	if setupErr := zap.Setup(new(l.Configuration)); setupErr != nil {
+		panic(setupErr)
+	}
 	l.Info("context.media.proto_test.init")
 }
 

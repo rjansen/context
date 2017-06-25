@@ -190,10 +190,16 @@
 			"revisionTime": "2016-03-05T16:54:46Z"
 		},
 		{
-			"checksumSHA1": "Z1tyxwqTNXt0+Qonu8ZUaobqYKQ=",
+			"checksumSHA1": "Ps+YJXLv/2aax1HTpBb/mLKVAtA=",
 			"path": "github.com/rjansen/l",
-			"revision": "3cb7a27a9c7a162f67811ea6b4f16bd0877521fc",
-			"revisionTime": "2016-12-13T13:14:10Z"
+			"revision": "694f03f2998c6539a1dd0c9a433dc437a9b1ef22",
+			"revisionTime": "2017-04-27T22:20:17Z"
+		},
+		{
+			"checksumSHA1": "3ECAFgkhplKj/2N4/8QqByUlR8M=",
+			"path": "github.com/rjansen/l/zap",
+			"revision": "694f03f2998c6539a1dd0c9a433dc437a9b1ef22",
+			"revisionTime": "2017-04-27T22:20:17Z"
 		},
 		{
 			"checksumSHA1": "W8ZYtAVC0Cj2NxIrCBOlYUSjKD0=",

@@ -6,17 +6,21 @@ import (
 	"github.com/rjansen/haki"
 	"github.com/rjansen/haki/media/json"
 	"github.com/rjansen/l"
+	"github.com/rjansen/l/zap"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
+	// "os"
 	"strings"
 	"testing"
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "../test/etc/haki/haki.yaml")
+	// os.Args = append(os.Args, "-ecf", "../test/etc/haki/haki.yaml")
+	if setupErr := zap.Setup(new(l.Configuration)); setupErr != nil {
+		panic(setupErr)
+	}
 	l.Info("context.fast_test.init")
 }
 

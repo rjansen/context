@@ -6,15 +6,19 @@ import (
 	"errors"
 	"github.com/rjansen/haki/media/proto"
 	"github.com/rjansen/l"
+	"github.com/rjansen/l/zap"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
-	"os"
+	// "os"
 	"strings"
 	"testing"
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "../test/etc/haki/haki.yaml")
+	// os.Args = append(os.Args, "-ecf", "../test/etc/haki/haki.yaml")
+	if setupErr := zap.Setup(new(l.Configuration)); setupErr != nil {
+		panic(setupErr)
+	}
 	l.Info("context.fast_test.init")
 }
 

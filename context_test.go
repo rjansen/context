@@ -3,13 +3,17 @@ package haki
 import (
 	"errors"
 	"github.com/rjansen/l"
+	"github.com/rjansen/l/zap"
 	"github.com/stretchr/testify/assert"
-	"os"
+	// "os"
 	"testing"
 )
 
 func init() {
-	os.Args = append(os.Args, "-ecf", "./test/etc/haki/haki.yaml")
+	// os.Args = append(os.Args, "-ecf", "./test/etc/haki/haki.yaml")
+	if setupErr := zap.Setup(new(l.Configuration)); setupErr != nil {
+		panic(setupErr)
+	}
 	l.Info("context_test.init")
 }
 
