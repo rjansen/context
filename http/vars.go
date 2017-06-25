@@ -23,7 +23,7 @@ type Keys struct {
 }
 
 type Auditor struct {
-	Log      l.Logger
+	l.Logger
 	Identity *Identity
 }
 

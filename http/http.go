@@ -193,10 +193,10 @@ func auditHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request
 		l.String("token", identity.Token),
 	)
 	auditor := &Auditor{
-		Log:      logger,
+		Logger:   logger,
 		Identity: identity,
 	}
-	auditor.Log.Info("haki.http.Request",
+	auditor.Info("haki.http.Request",
 		l.Bool("ctxIsNil", r.Context() == nil),
 	)
 
@@ -208,12 +208,12 @@ func auditHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request
 	rw := NewResponseWriter(w)
 	var err error
 	if err = handler(rw, r); err != nil {
-		auditor.Log.Error("haki.http.RequestErr",
+		auditor.Error("haki.http.RequestErr",
 			l.Err(err),
 		)
 	}
 	response := rw.(ResponseWriter)
-	auditor.Log.Info("haki.http.Response",
+	auditor.Info("haki.http.Response",
 		l.String("status", http.StatusText(response.Status())),
 		l.Int("size", response.Size()),
 		l.Duration("requestTime", time.Since(start)),
