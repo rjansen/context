@@ -198,7 +198,7 @@ func TestAuditLogAndErrorWrapper(t *testing.T) {
 		auditor := GetAuditor(r)
 		assert.NotNil(t, auditor)
 
-		assert.NotNil(t, auditor.Log)
+		assert.NotNil(t, auditor.Logger)
 		assert.NotNil(t, auditor.Identity)
 
 		w.WriteHeader(http.StatusAccepted)
