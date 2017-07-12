@@ -6,9 +6,12 @@ import (
 )
 
 const (
-	ContentTypeHeader   = "Content-Type"
-	ContentLengthHeader = "Content-Length"
-	AcceptHeader        = "Accept"
+	ContentTypeHeader    = "Content-Type"
+	ContentLengthHeader  = "Content-Length"
+	AcceptHeader         = "Accept"
+	RequestContextHeader = "X-Request-Context"
+	RequestIDHeader      = "X-Request-Id"
+	AuthorizationHeader  = "Authorization"
 )
 
 var (

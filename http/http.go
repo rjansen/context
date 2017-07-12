@@ -178,7 +178,15 @@ func (h LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func auditHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
 	tid := uuid.NewV4().String()
-	r = r.WithContext(context.WithValue(r.Context(), "tid", tid))
+
+	cid := r.Header.Get(haki.RequestContextHeader)
+
+	w.Header().Set(haki.RequestIDHeader, tid)
+	w.Header().Set(haki.RequestContextHeader, cid)
+
+	r = set(r, ContextKeys.TID, tid)
+	r = set(r, ContextKeys.CID, tid)
+
 	identity := &Identity{
 		Token: "tanonymous",
 		Value: map[string]interface{}{
@@ -188,11 +196,14 @@ func auditHandle(handler HTTPHandlerFunc, w http.ResponseWriter, r *http.Request
 	}
 	logger := l.WithFields(
 		l.String("tid", tid),
+		l.String("cid", cid),
 		l.String("method", r.Method),
 		l.String("path", r.URL.Path),
 		l.String("token", identity.Token),
 	)
 	auditor := &Auditor{
+		TID:      tid,
+		CID:      cid,
 		Logger:   logger,
 		Identity: identity,
 	}

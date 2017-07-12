@@ -8,6 +8,8 @@ import (
 
 var (
 	ContextKeys = Keys{
+		TID:      "tid",
+		CID:      "cid",
 		LOG:      "requestLog",
 		TOKEN:    "requestToken",
 		IDENTITY: "requestIdentity",
@@ -16,6 +18,8 @@ var (
 )
 
 type Keys struct {
+	TID      string
+	CID      string
 	LOG      string
 	TOKEN    string
 	IDENTITY string
@@ -24,6 +28,8 @@ type Keys struct {
 
 type Auditor struct {
 	l.Logger
+	TID      string
+	CID      string
 	Identity *Identity
 }
 
@@ -38,6 +44,10 @@ func set(r *http.Request, key interface{}, val interface{}) *http.Request {
 
 func Get(r *http.Request, key interface{}) interface{} {
 	return r.Context().Value(key)
+}
+
+func GetTID(r *http.Request) string {
+	return Get(r, ContextKeys.TID).(string)
 }
 
 func GetLog(r *http.Request) l.Logger {
