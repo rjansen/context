@@ -1,8 +1,17 @@
-FROM golang:1.10.1-alpine3.6
+FROM golang:1.10.1
 
-RUN apk update && apk add git
-RUN go get -u github.com/Masterminds/glide
+ENV GLIDE_HOME="/tmp"
 
-CMD glide install && \ 
-CGO_ENABLED=0 go build \
--ldflags "-X bitbucket.org/serasa/ecs/ecred/orchestrator/api.version=$(git describe --abbrev=0 --tags --always)"
+#RUN apt-get update && \
+#    apt-get install && \
+#    make && \
+#    git && \
+#    jq && \
+#    curl && \
+#    go get -u github.com/Masterminds/glide
+
+#CMD make build
+
+#CMD glide install && \ 
+#CGO_ENABLED=0 go build \
+#-ldflags "-X bitbucket.org/serasa/ecs/ecred/orchestrator/api.version=$(git describe --abbrev=0 --tags --always)"
